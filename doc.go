@@ -1,13 +1,13 @@
 //
 // 实现了go程池短任务管理。
 // 保证go程释放后不被回收下次任务可以重复利用,已解决大并发多任务时go程复用。
-// 创建代码如下：
+// 使用下面的方法创建：
 //
 // 	CreateAsyncTaskOperater(taskname string, asyncTaskExecuter AsyncTaskExecuter, option *AsyncTaskOption) AsyncTaskOperater
 //
 // 实现了go程池长任务管理。
 // 保证go程释放后不被回收下次任务可以重复利用,用来解决长连接大量断开重连时导致的go程的频繁释放，同时可以控制长连接的最大数量。
-// 创建代码如下：
+// 使用下面的方法创建：
 //
 // 	CreateLongTimeTaskOperater(taskname string, asyncTaskExecuter AsyncTaskExecuter, option *AsyncTaskOption) AsyncTaskOperater
 //
