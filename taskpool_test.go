@@ -57,25 +57,25 @@ var _ = Describe("任务池测试", func() {
 	It("同步任务测试1", func() {
 		for i := int64(0); i < 100; i++ {
 			task := createTestTask(TaskLevel_Normal, i, 100)
-			take := taskpool.Put(task)
-			take.Wait()
-			if take.IsEnd() {
-				Ω(take.Error()).NotTo(HaveOccurred())
-				Ω(take.Result()).Should(Equal(task))
+			token := taskpool.Put(task)
+			token.Wait()
+			if token.IsEnd() {
+				Ω(token.Error()).NotTo(HaveOccurred())
+				Ω(token.Result()).Should(Equal(task))
 
 			} else {
 				Ω(false).Should(BeTrue())
 			}
 		}
 	})
-	It("同步任务测试2,测试taken Wait", func() {
+	It("同步任务测试2,测试token Wait", func() {
 		task := createTestTask(TaskLevel_Normal, 1, 2)
-		take := taskpool.Put(task)
+		token := taskpool.Put(task)
 		time.Sleep(time.Second)
-		take.Wait()
-		if take.IsEnd() {
-			Ω(take.Error()).NotTo(HaveOccurred())
-			Ω(take.Result()).Should(Equal(task))
+		token.Wait()
+		if token.IsEnd() {
+			Ω(token.Error()).NotTo(HaveOccurred())
+			Ω(token.Result()).Should(Equal(task))
 
 		} else {
 			Ω(false).Should(BeTrue())
@@ -83,7 +83,7 @@ var _ = Describe("任务池测试", func() {
 
 	})
 	It("异步任务测试,测试", func() {
-		takens := make(chan Takener, 10000)
+		tokens := make(chan Takener, 10000)
 		count := int64(0)
 		for i := int64(0); i < 100; i++ {
 			go func() {
@@ -94,13 +94,13 @@ var _ = Describe("任务池测试", func() {
 						//fmt.Println("任务序号:", tt.value, "任务级别", tt.result)
 						Ω(task).Should(Equal(tt))
 					}
-					takens <- taskpool.Put(task)
+					tokens <- taskpool.Put(task)
 				}
 			}()
 		}
 		var k = 0
-		for taken := range takens {
-			taken.Wait()
+		for token := range tokens {
+			token.Wait()
 			k++
 			if k >= 1000 {
 				break
@@ -134,7 +134,7 @@ var _ = Describe("任务池测试", func() {
 			}
 			wg.Wait()
 		})
-		Ω(runtime.Seconds()).Should(BeNumerically("<", 4), "SomethingHard() shouldn't take too long.")
+		Ω(runtime.Seconds()).Should(BeNumerically("<", 4), "SomethingHard() shouldn't token too long.")
 		b.RecordValue("执行时间:", float64(runtime.Nanoseconds())/1000)
 	}, 1000)
 	Measure("测试一组1000个任务直接执行完成时间", func(b Benchmarker) {
@@ -161,7 +161,7 @@ var _ = Describe("任务池测试", func() {
 			wg.Wait()
 
 		})
-		Ω(runtime.Seconds()).Should(BeNumerically("<", 4), "SomethingHard() shouldn't take too long.")
+		Ω(runtime.Seconds()).Should(BeNumerically("<", 4), "SomethingHard() shouldn't token too long.")
 
 		b.RecordValue("执行时间:", float64(runtime.Nanoseconds())/1000)
 	}, 1000)

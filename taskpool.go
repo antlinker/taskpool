@@ -1,17 +1,21 @@
-/**
-任务缓存池，任务可以分片优先级排序
-**/
 package taskpool
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
 
+//任务池已经停止错误
+//放入元素时如果任务池已停止会在tokener中返回该错误
+var PoolStopError = errors.New("任务池已经停止")
+
+//任务池执行失败错误
 type TaskPoolExecError struct {
 	err interface{}
 }
 
+//执行错误
 func (e *TaskPoolExecError) Error() string {
 	return fmt.Sprintf("任务执行失败：%v", e.err)
 }
@@ -32,6 +36,7 @@ const (
 	TaskLevel_Highest
 )
 
+//分片有限任务池配置参数
 type Option struct {
 	//进入任务队列的缓冲大小
 	PutBuffNum int
@@ -43,18 +48,26 @@ type Option struct {
 	TaskPoolNum int64
 }
 
-//任务池
+//异步任务池
 type TaskPooler interface {
-	Put(task Tasker) Takener
+	//将任务放入池中
+	//返回一个Tokener令牌，可以查看任务执行情况
+	Put(task Tasker) Tokener
+	//停止任务池
 	Stop()
 }
+
+//执行任务
 type Tasker interface {
+	//执行任务级别
 	Lvl() TaskLevel
+	//执行任务方法
 	Exec() (interface{}, error)
 }
 
-//执行任务返回
-type Takener interface {
+//执行任务令牌
+//可以查询任务执行情况
+type Tokener interface {
 	//等待任务执行完成
 	Wait()
 	//任务执行结果

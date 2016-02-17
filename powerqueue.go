@@ -1,10 +1,22 @@
-/**
+package taskpool
+
+/*
 实现一个按权重排序的列表容器
 该容器实现按权重大的排在前面
-使用list:= NewPowerList() *PowerList 创建容器
-使用list.Insert(lvl int64, value interface{}) 插入一个元素
-使用 Pop() (elem *PowerElem)
-该容器是线程不安全的，不能多线程使用
+使用下面代码创建容器:
+
+	list:= NewPowerList() *PowerList
+
+
+使用下面代码插入一个元素:
+
+	list.Insert(lvl int64, value interface{})
+
+使用下面代码弹出一个元素
+
+	Pop() (elem *PowerElem)
+
+该容器是线程不安全的，不能多线程使用.
 实现原理:
 实现了一个元素的单向列表
 每一元素指向下一个元素,同时每一个元素都有指向自身权重的索引标记
@@ -17,9 +29,7 @@
 权重小于第一个元素,则取下一个权重索引,直到找到一个权重核当前元素权重相同或小于当前权重
 相同则插入到权重索引指向的元素后面,修改权重索引指向当前元素
 小于则去之前的一个权重,将元素插入到这个权重索引指向元素的后面,创建当前元素的权重索引,插入倒权重索引中
-**/
-package taskpool
-
+*/
 type PowerLister interface {
 	//插入一个元素
 	//lvl为权重权重大的排在前面,权重一个样后插入的在后面先插入的在前面

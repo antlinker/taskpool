@@ -1,6 +1,3 @@
-/**
-该go程池可以用来维持长连接任务，可以控制最大数量
-**/
 package taskpool
 
 import (
@@ -11,6 +8,7 @@ import (
 	"time"
 )
 
+//该go程池可以用来维持长连接任务，可以控制最大数量
 //长执行时间任务go程池配置
 type LongTimeTaskOperate struct {
 	taskname string
@@ -37,7 +35,9 @@ type LongTimeTaskOperate struct {
 }
 
 //创建长执行时间任务go程池
-
+//参数taskname 任务池名称
+//参数asyncTaskExecuter 任务执行者，决定任务如何执行
+//参数option 任务池配置参数
 func CreateLongTimeTaskOperater(taskname string, asyncTaskExecuter AsyncTaskExecuter, option *AsyncTaskOption) AsyncTaskOperater {
 	tmp := &LongTimeTaskOperate{
 		closeasyncchan: make(chan bool),

@@ -1,12 +1,5 @@
 package taskpool
 
-/**
-多分片,分片内权重排序容器
-使用 queue := CreateSliceQueue(writeslicenum int, sliceelemnum int) SliceQueuer
-使用 Put(lvl int64, elem interface{})放入一个元素
-使用 PopBlock() SliceElemer 弹出一个元素 ,如果为空阻塞
-使用Len() int查看容器内有多少各元素
-**/
 import (
 	"fmt"
 	"sync/atomic"
@@ -14,12 +7,30 @@ import (
 	"sync"
 )
 
-//分片队列
+//多分片队列,分片内权重排序容器
+//使用下面代码创建任务队列:
+//
+//	queue := CreateSliceQueue(writeslicenum int, sliceelemnum int) SliceQueuer
+//
+//使用下面代码放入元素
+//
+//	queue.Put(lvl int64, elem interface{})
+//
+//
+//使用下面代码弹出一个元素 ,如果为空阻塞
+//
+//	queue.PopBlock() SliceElemer
+//
+//使用下面代码查看容器内有多少各元素
+//
+//	queue.Len() int
+//
 type SliceQueuer interface {
 	//将数据插入队列
 	Put(lvl int64, elem interface{})
 	//弹出一个数据，如果没有数据则阻塞
 	PopBlock() SliceElemer
+	//弹出一个元素,如果没有数据返回nil
 	Pop() SliceElemer
 	//容器内元素个数 返回-1容器不可用
 	Len() int

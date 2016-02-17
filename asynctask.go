@@ -9,12 +9,20 @@ import (
 	"sync/atomic"
 )
 
+//异步任务
+//所有需要执行的异步任务都需要继承该接口
 type Task interface {
+	//任务失败处理
 	Failded(err error)
+	//失误失败次数
 	GetFaildedNum() uint64
+	//任务执行成功
 	Success(result ...interface{})
+	//增加失败次数
 	faidedAdd()
 }
+
+//异步任务基类
 type BaseTask struct {
 	faild uint64
 }
@@ -32,7 +40,9 @@ func (t *BaseTask) Success(result ...interface{}) {
 
 }
 
+//异步任务执行者
 type AsyncTaskExecuter interface {
+	//任务执行方法
 	ExecTask(task Task) error
 }
 type AsyncTaskOption struct {
@@ -45,10 +55,17 @@ type AsyncTaskOption struct {
 	//任务最大失败次数
 	AsyncTaskMaxFaildedNum uint64
 }
+
+//异步go程池
 type AsyncTaskOperater interface {
+	//执行异步任务，该方法并不会立即执行
+	//仅将任务放入到任务队列
 	ExecAsyncTask(task Task) error
+	//停止go程池，直到全部任务结束
 	StopWait()
 }
+
+//异步任务go程池，主要执行短时间任务
 type AsyncTaskOperate struct {
 	taskname string
 	sync.WaitGroup
@@ -73,6 +90,10 @@ type AsyncTaskOperate struct {
 	execHandle func(task Task) error
 }
 
+//创建一个go程池
+//参数taskname 任务池名称
+//参数asyncTaskExecuter 任务执行者，决定任务如何执行
+//参数option 任务池配置参数
 func CreateAsyncTaskOperater(taskname string, asyncTaskExecuter AsyncTaskExecuter, option *AsyncTaskOption) AsyncTaskOperater {
 	tmp := &AsyncTaskOperate{
 		closeasyncchan: make(chan bool),

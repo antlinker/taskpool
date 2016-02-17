@@ -1,27 +1,24 @@
 package taskpool
 
 import (
-	"errors"
 	"sync"
 	"time"
 )
 
-var PoolStopError = errors.New("任务池已经停止")
-
-//任务
+//任务池任务
 type pooltask struct {
 	BaseTask
 	task  Tasker
-	taken *Taken
+	taken *Token
 }
 
 var takenPool = sync.Pool{
 	New: func() interface{} {
-		return &Taken{}
+		return &Token{}
 	},
 }
 
-type Taken struct {
+type Token struct {
 	resultChan chan struct{}
 	err        error
 	result     interface{}
@@ -30,45 +27,45 @@ type Taken struct {
 	end        bool
 }
 
-func (t *Taken) Wait() {
+func (t *Token) Wait() {
 
 	<-t.resultChan
 
 }
-func (t *Taken) start() {
+func (t *Token) start() {
 	t.end = false
 	t.err = nil
 	t.startTime = time.Now()
 	t.resultChan = make(chan struct{})
 }
-func (t *Taken) end0(result interface{}, err error) {
+func (t *Token) end0(result interface{}, err error) {
 	t.result = result
 	t.err = err
 	t.end = true
 	close(t.resultChan)
 }
-func (t *Taken) Result() interface{} {
+func (t *Token) Result() interface{} {
 	return t.result
 }
 
 //任务执行是否完成
 //true 完成，false未完成
-func (t *Taken) IsEnd() bool {
+func (t *Token) IsEnd() bool {
 	return t.end
 } //任务创建时间
 
-func (t *Taken) CreTime() time.Time {
+func (t *Token) CreTime() time.Time {
 	return t.startTime
 }
 
 //任务完成时间
-func (t *Taken) EndTime() time.Time {
+func (t *Token) EndTime() time.Time {
 	return t.endTime
 }
 
 //是否执行失败，error为nil执行成功，否则为失败，error表示失败原因
 
-func (t *Taken) Error() error {
+func (t *Token) Error() error {
 	return t.err
 }
 
@@ -127,7 +124,7 @@ func (p *TaskPool) init() {
 	go p.readstart()
 }
 
-func (p *TaskPool) Put(task Tasker) Takener {
+func (p *TaskPool) Put(task Tasker) Tokener {
 
 	ptask := p.createTask(task)
 	if !p.run {
@@ -170,7 +167,7 @@ func (p *TaskPool) ExecTask(t Task) error {
 	return err
 }
 func (p *TaskPool) createTask(task Tasker) pooltask {
-	taken := &Taken{}
+	taken := &Token{}
 	taken.start()
 	return pooltask{
 		task: task, taken: taken,
