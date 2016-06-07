@@ -15,7 +15,8 @@ func init() {
 	Tlog.SetEnabled(false)
 }
 
-func TlogInit(configs ...string) {
-	Tlog = alog.NewALog(configs...)
+func TlogInit(configs string) {
+	Tlog.ReloadConfig(configs)
+
 	Tlog.SetLogTag(LOG_TAG)
 }
