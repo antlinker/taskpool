@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"runtime/debug"
 	"sync"
+	"time"
 )
 
-type GoAsyncTaskOperate struct {
+type goAsyncTaskOperate struct {
 	taskname string
 	sync.WaitGroup
 
@@ -22,8 +23,9 @@ type GoAsyncTaskOperate struct {
 	quit                   bool
 }
 
+// CreateGoAsyncTaskOperater 创建异步任务
 func CreateGoAsyncTaskOperater(taskname string, asyncTaskExecuter AsyncTaskExecuter, option *AsyncTaskOption) AsyncTaskOperater {
-	tmp := &GoAsyncTaskOperate{
+	tmp := &goAsyncTaskOperate{
 		taskname: taskname,
 	}
 	if option.AsyncMaxWaitTaskNum > 16 {
@@ -41,31 +43,42 @@ func CreateGoAsyncTaskOperater(taskname string, asyncTaskExecuter AsyncTaskExecu
 	tmp.initPool()
 	return tmp
 }
-
-func (m *GoAsyncTaskOperate) initPool() {
+func (m *goAsyncTaskOperate) SetMaxAsyncPoolNum(num int64) {
+	//	m.maxAsyncPoolNum = num
+	panic("不能设置最大数量")
+}
+func (m *goAsyncTaskOperate) SetMinAsyncPoolNum(num int64) {
+	//	m.minAsyncPoolNum = num
+	panic("不能设置最最小数量")
+}
+func (m *goAsyncTaskOperate) SetAsyncPoolIdelTime(idel time.Duration) {
+	//	m.asyncPoolIdelTime = idel
+	panic("不能设置空闲时间")
+}
+func (m *goAsyncTaskOperate) initPool() {
 	Tlog.Debugf("开始初始化任务池[%v]%d,%d", m.taskname)
 	go m.readTask()
 	Tlog.Debugf("初始化任务池[%v]完成", m.taskname)
 }
-func (m *GoAsyncTaskOperate) StopWait() {
+func (m *goAsyncTaskOperate) StopWait() {
 	m.quit = true
 	m.Wait()
 }
-func (m *GoAsyncTaskOperate) readTask() {
+func (m *goAsyncTaskOperate) readTask() {
 
 	for task := range m.asyncchan {
 		m.Add(1)
 		go m.execTask(task)
 	}
 }
-func (m *GoAsyncTaskOperate) ExecAsyncTask(task Task) error {
+func (m *goAsyncTaskOperate) ExecAsyncTask(task Task) error {
 	if m.quit {
 		return errors.New("任务池已经停止,不能执行任务")
 	}
 	m.asyncchan <- task
 	return nil
 }
-func (m *GoAsyncTaskOperate) execTask(task Task) {
+func (m *goAsyncTaskOperate) execTask(task Task) {
 	defer func() {
 		if err := recover(); err != nil {
 			Tlog.Error("异步任务执行失败:["+m.taskname+"]", fmt.Errorf("%s %s", task, err))

@@ -56,7 +56,7 @@ var _ = Describe("任务池测试", func() {
 	})
 	It("同步任务测试1", func() {
 		for i := int64(0); i < 100; i++ {
-			task := createTestTask(TaskLevel_Normal, i, 100)
+			task := createTestTask(TaskLevelNormal, i, 100)
 			token := taskpool.Put(task)
 			token.Wait()
 			if token.IsEnd() {
@@ -69,7 +69,7 @@ var _ = Describe("任务池测试", func() {
 		}
 	})
 	It("同步任务测试2,测试token Wait", func() {
-		task := createTestTask(TaskLevel_Normal, 1, 2)
+		task := createTestTask(TaskLevelNormal, 1, 2)
 		token := taskpool.Put(task)
 		time.Sleep(time.Second)
 		token.Wait()
@@ -83,7 +83,7 @@ var _ = Describe("任务池测试", func() {
 
 	})
 	It("异步任务测试,测试", func() {
-		tokens := make(chan Takener, 10000)
+		tokens := make(chan Tokener, 10000)
 		count := int64(0)
 		for i := int64(0); i < 100; i++ {
 			go func() {

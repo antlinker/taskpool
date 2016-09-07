@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-//该go程池可以用来维持长连接任务，可以控制最大数量
+// LongTimeTaskOperate 该go程池可以用来维持长连接任务，可以控制最大数量
 //长执行时间任务go程池配置
-type LongTimeTaskOperate struct {
+type longTimeTaskOperate struct {
 	taskname string
 	sync.WaitGroup
 
@@ -34,12 +34,12 @@ type LongTimeTaskOperate struct {
 	execHandle func(task Task) error
 }
 
-//创建长执行时间任务go程池
+// CreateLongTimeTaskOperater 创建长执行时间任务go程池
 //参数taskname 任务池名称
 //参数asyncTaskExecuter 任务执行者，决定任务如何执行
 //参数option 任务池配置参数
 func CreateLongTimeTaskOperater(taskname string, asyncTaskExecuter AsyncTaskExecuter, option *AsyncTaskOption) AsyncTaskOperater {
-	tmp := &LongTimeTaskOperate{
+	tmp := &longTimeTaskOperate{
 		closeasyncchan: make(chan bool),
 		taskname:       taskname,
 	}
@@ -76,10 +76,19 @@ func CreateLongTimeTaskOperater(taskname string, asyncTaskExecuter AsyncTaskExec
 	tmp.initPool()
 	return tmp
 }
-func (m *LongTimeTaskOperate) StopWait() {
+func (m *longTimeTaskOperate) SetMaxAsyncPoolNum(num int64) {
+	m.maxAsyncPoolNum = num
+}
+func (m *longTimeTaskOperate) SetMinAsyncPoolNum(num int64) {
+	m.minAsyncPoolNum = num
+}
+func (m *longTimeTaskOperate) SetAsyncPoolIdelTime(idel time.Duration) {
+	m.asyncPoolIdelTime = idel
+}
+func (m *longTimeTaskOperate) StopWait() {
 
 }
-func (m *LongTimeTaskOperate) initPool() {
+func (m *longTimeTaskOperate) initPool() {
 	Tlog.Debugf("开始初始化go程[%s]：%d,%d", m.taskname, m.minAsyncPoolNum, m.maxAsyncPoolNum)
 
 	m.curAsyncPoolNum = 0
@@ -106,7 +115,7 @@ func (m *LongTimeTaskOperate) initPool() {
 
 }
 
-func (m *LongTimeTaskOperate) ExecAsyncTask(task Task) error {
+func (m *longTimeTaskOperate) ExecAsyncTask(task Task) error {
 	m.asyncchan <- task
 	// if m.minAsyncPoolNum < m.maxAsyncPoolNum {
 	// 	m.cond.L.Lock()
@@ -117,7 +126,7 @@ func (m *LongTimeTaskOperate) ExecAsyncTask(task Task) error {
 }
 
 //增加一个异步任务
-func (m *LongTimeTaskOperate) addAsync() {
+func (m *longTimeTaskOperate) addAsync() {
 	m.Add(1)
 	defer func() {
 		if err := recover(); err != nil {
@@ -150,7 +159,7 @@ func (m *LongTimeTaskOperate) addAsync() {
 		}
 	}
 }
-func (m *LongTimeTaskOperate) execTask(task Task) {
+func (m *longTimeTaskOperate) execTask(task Task) {
 	// defer func() {
 	// 	if err := recover(); err != nil {
 	// 		task.faidedAdd()

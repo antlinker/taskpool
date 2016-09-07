@@ -5,18 +5,20 @@ import (
 )
 
 const (
-	LOG_TAG = "TASKPOOL"
+	logTag = "TASKPOOL"
 )
 
-var Tlog *alog.ALog = alog.NewALog()
+// Tlog 日志模块
+var Tlog = alog.NewALog()
 
 func init() {
-	Tlog.SetLogTag(LOG_TAG)
+	Tlog.SetLogTag(logTag)
 	Tlog.SetEnabled(false)
 }
 
+// TlogInit 日志初始化
 func TlogInit(configs string) {
 	Tlog.ReloadConfig(configs)
 
-	Tlog.SetLogTag(LOG_TAG)
+	Tlog.SetLogTag(logTag)
 }

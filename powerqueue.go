@@ -1,35 +1,33 @@
 package taskpool
 
-/*
-实现一个按权重排序的列表容器
-该容器实现按权重大的排在前面
-使用下面代码创建容器:
-
-	list:= NewPowerList() *PowerList
-
-
-使用下面代码插入一个元素:
-
-	list.Insert(lvl int64, value interface{})
-
-使用下面代码弹出一个元素
-
-	Pop() (elem *PowerElem)
-
-该容器是线程不安全的，不能多线程使用.
-实现原理:
-实现了一个元素的单向列表
-每一元素指向下一个元素,同时每一个元素都有指向自身权重的索引标记
-权重索引标记同一权重最后一个元素
-权重索引标记是一个单向列表,按权重大小排序,大的在前小的在后
-插入元素时,判断为空,则插入第一个元素,生产索引
-不为空取出第一个元素,找到该元素的权重索引,比对权重
-权重相同则插入权重索引指向的元素后面
-权重大于第一个元素插入倒第一个元素位置
-权重小于第一个元素,则取下一个权重索引,直到找到一个权重核当前元素权重相同或小于当前权重
-相同则插入到权重索引指向的元素后面,修改权重索引指向当前元素
-小于则去之前的一个权重,将元素插入到这个权重索引指向元素的后面,创建当前元素的权重索引,插入倒权重索引中
-*/
+// PowerLister 实现一个按权重排序的列表容器
+// 该容器实现按权重大的排在前面
+// 使用下面代码创建容器:
+//
+// 	list:= NewPowerList() *PowerList
+//
+//
+// 使用下面代码插入一个元素:
+//
+// 	list.Insert(lvl int64, value interface{})
+//
+// 使用下面代码弹出一个元素
+//
+// 	Pop() (elem *PowerElem)
+//
+// 该容器是线程不安全的，不能多线程使用.
+// 实现原理:
+// 实现了一个元素的单向列表
+// 每一元素指向下一个元素,同时每一个元素都有指向自身权重的索引标记
+// 权重索引标记同一权重最后一个元素
+// 权重索引标记是一个单向列表,按权重大小排序,大的在前小的在后
+// 插入元素时,判断为空,则插入第一个元素,生产索引
+// 不为空取出第一个元素,找到该元素的权重索引,比对权重
+// 权重相同则插入权重索引指向的元素后面
+// 权重大于第一个元素插入倒第一个元素位置
+// 权重小于第一个元素,则取下一个权重索引,直到找到一个权重核当前元素权重相同或小于当前权重
+// 相同则插入到权重索引指向的元素后面,修改权重索引指向当前元素
+// 小于则去之前的一个权重,将元素插入到这个权重索引指向元素的后面,创建当前元素的权重索引,插入倒权重索引中
 type PowerLister interface {
 	//插入一个元素
 	//lvl为权重权重大的排在前面,权重一个样后插入的在后面先插入的在前面
@@ -42,16 +40,19 @@ type PowerLister interface {
 	Copy(PowerLister)
 }
 
+// NewPowerList 创建权重列表
 func NewPowerList() PowerLister {
 	return &PowerList{}
 }
 
+// PowerMark 权重元素标记
 type PowerMark struct {
 	lvl  int64
 	elem *PowerElem
 	next *PowerMark
 }
 
+// PowerElem 权重元素
 type PowerElem struct {
 	lvl  int64
 	data interface{}
@@ -59,36 +60,49 @@ type PowerElem struct {
 	mark *PowerMark
 }
 
-//当前权重索引标记项
+// PowerMark 当前权重索引标记项
 func (e *PowerElem) PowerMark() *PowerMark {
 	return e.mark
 }
+
+// Lvl 级别
 func (e *PowerElem) Lvl() int64 {
 	return e.lvl
 }
+
+// Get 获取值
 func (e *PowerElem) Get() interface{} {
 	return e.data
 }
+
+// Set 设置值
 func (e *PowerElem) Set(lvl int64, value interface{}) {
 	e.lvl = lvl
 	e.data = value
 }
+
+// Next 下一个元素
 func (e *PowerElem) Next() *PowerElem {
 	return e.next
 }
 
-//权重列表
+// PowerList 权重列表
 type PowerList struct {
 	size int
 	root PowerElem
 }
 
+// First 切换到第一个元素
 func (s *PowerList) First() *PowerElem {
 	return s.root.next
 }
+
+// Len 列表数量
 func (s *PowerList) Len() int {
 	return s.size
 }
+
+//
 func (s *PowerList) insertFirst(elem *PowerElem) {
 	s.size++
 	next := s.root.next
@@ -120,7 +134,7 @@ func (s *PowerList) insertAfter(elem *PowerElem, mark *PowerElem) {
 	mark.mark.next = elem.mark
 }
 
-//插入一个元素
+// Insert 插入一个元素
 func (s *PowerList) Insert(lvl int64, value interface{}) {
 	//创建列表元素
 	elem := &PowerElem{lvl: lvl, data: value}
@@ -148,14 +162,18 @@ func (s *PowerList) Insert(lvl int64, value interface{}) {
 	s.insertAfter(elem, curmark.elem)
 
 }
+
+// Pop 弹出一个元素
 func (s *PowerList) Pop() (elem *PowerElem) {
 	elem = s.root.next
 	if elem != nil {
-		s.size -= 1
+		s.size--
 		s.root.next = s.root.next.next
 	}
 	return
 }
+
+// Copy 拷贝
 func (s *PowerList) Copy(list PowerLister) {
 	srcs, ok := list.(*PowerList)
 	if !ok {

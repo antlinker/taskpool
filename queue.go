@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-//多分片队列,分片内权重排序容器
+// SliceQueuer 多分片队列,分片内权重排序容器
 //使用下面代码创建任务队列:
 //
 //	queue := CreateSliceQueue(writeslicenum int, sliceelemnum int) SliceQueuer
@@ -37,12 +37,14 @@ type SliceQueuer interface {
 	//关闭队列，此时所有调用PopBlock方法都返回nil
 	Close()
 }
+
+// SliceElemer 分片元素
 type SliceElemer interface {
 	Lvl() int64
 	Get() interface{}
 }
 
-//创建分片有限队列
+// CreateSliceQueue 创建分片有限队列
 //writeslicenum 分片数量
 //sliceelemnum 分片内元素数量
 func CreateSliceQueue(writeslicenum int, sliceelemnum int) SliceQueuer {
@@ -51,7 +53,7 @@ func CreateSliceQueue(writeslicenum int, sliceelemnum int) SliceQueuer {
 	return queue
 }
 
-//分片队列选项
+// SliceQueueOption 分片队列选项
 type SliceQueueOption struct {
 	//切片元素数量
 	sliceelemnum int
@@ -59,7 +61,7 @@ type SliceQueueOption struct {
 	writeslicenum int
 }
 
-//分片队列
+// SliceQueue 分片队列
 type SliceQueue struct {
 	//写锁
 	writelock sync.Mutex
@@ -99,12 +101,16 @@ func (q *SliceQueue) init(writeslicenum int, sliceelemnum int) {
 func (q *SliceQueue) createSlice() PowerLister {
 	return NewPowerList()
 }
+
+// Len 数量
 func (q *SliceQueue) Len() int {
 	if q.closing || !q.run {
 		return -1
 	}
 	return int(q.size)
 }
+
+// Close 关闭队列
 func (q *SliceQueue) Close() {
 
 	if !q.checkRun() {
@@ -118,7 +124,7 @@ func (q *SliceQueue) Close() {
 	q.run = false
 }
 
-//放入一个元素lvl为优先级 elem为元素
+// Put 放入一个元素lvl为优先级 elem为元素
 func (q *SliceQueue) Put(lvl int64, elem interface{}) {
 	if !q.checkRun() {
 		return
@@ -157,7 +163,7 @@ func (q *SliceQueue) Put(lvl int64, elem interface{}) {
 	q.readwait.L.Unlock()
 }
 
-//弹出一个元素
+// PopBlock 弹出一个元素
 func (q *SliceQueue) PopBlock() (elem SliceElemer) {
 	if !q.checkRun() {
 		fmt.Println("SliceQueue 没有运行")
@@ -209,7 +215,7 @@ func (q *SliceQueue) checkRun() bool {
 	return !q.closing && q.run
 }
 
-//弹出一个元素
+// Pop 弹出一个元素
 func (q *SliceQueue) Pop() (elem SliceElemer) {
 	if !q.checkRun() {
 		return

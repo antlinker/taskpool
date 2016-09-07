@@ -18,6 +18,7 @@ var takenPool = sync.Pool{
 	},
 }
 
+// Token 令牌
 type Token struct {
 	resultChan chan struct{}
 	err        error
@@ -27,6 +28,7 @@ type Token struct {
 	end        bool
 }
 
+// Wait 等待执行完成
 func (t *Token) Wait() {
 
 	<-t.resultChan
@@ -44,35 +46,35 @@ func (t *Token) end0(result interface{}, err error) {
 	t.end = true
 	close(t.resultChan)
 }
+
+// Result 执行结果
 func (t *Token) Result() interface{} {
 	return t.result
 }
 
-//任务执行是否完成
+// IsEnd 任务执行是否完成
 //true 完成，false未完成
 func (t *Token) IsEnd() bool {
 	return t.end
 } //任务创建时间
-
+// CreTime 开始时间
 func (t *Token) CreTime() time.Time {
 	return t.startTime
 }
 
-//任务完成时间
+// EndTime 任务完成时间
 func (t *Token) EndTime() time.Time {
 	return t.endTime
 }
 
-//是否执行失败，error为nil执行成功，否则为失败，error表示失败原因
-
+// Error 是否执行失败，error为nil执行成功，否则为失败，error表示失败原因
 func (t *Token) Error() error {
 	return t.err
 }
 
-//创建默认任务池
+// CreateDefaultTaskPool 创建默认任务池
 //putbuffnum 进入任务缓冲大小
 //slicemaxnum任务队列分片内最大任务数
-
 func CreateDefaultTaskPool(option Option) TaskPooler {
 	t := &TaskPool{
 		option: option,
@@ -81,6 +83,7 @@ func CreateDefaultTaskPool(option Option) TaskPooler {
 	return t
 }
 
+// TaskPool 任务池
 type TaskPool struct {
 	//配置参数
 	option Option
@@ -124,16 +127,19 @@ func (p *TaskPool) init() {
 	go p.readstart()
 }
 
+// Put 添加任务
 func (p *TaskPool) Put(task Tasker) Tokener {
 
 	ptask := p.createTask(task)
 	if !p.run {
-		ptask.taken.err = PoolStopError
+		ptask.taken.err = ErrStop
 		return ptask.taken
 	}
 	p.putchan <- &ptask
 	return ptask.taken
 }
+
+// Stop 停止任务
 func (p *TaskPool) Stop() {
 	Tlog.Debug("停止分片权重优先排序任务池....")
 	//fmt.Println("停止TaskPool")
@@ -148,12 +154,14 @@ func (p *TaskPool) Stop() {
 	Tlog.Debug("停止分片权重优先排序任务池完成")
 	//fmt.Println("停止TaskPool完成")
 }
+
+// ExecTask 执行任务
 func (p *TaskPool) ExecTask(t Task) error {
 	task := t.(*pooltask)
 	taken := task.taken
 	defer func() {
 		if err := recover(); err != nil {
-			taken.err = &TaskPoolExecError{err}
+			taken.err = &ErrExec{err}
 		}
 		taken.endTime = time.Now()
 		taken.end = true

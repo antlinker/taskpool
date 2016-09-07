@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 )
 
-//异步任务
+// Task 异步任务
 //所有需要执行的异步任务都需要继承该接口
 type Task interface {
 	//任务失败处理
@@ -22,29 +22,36 @@ type Task interface {
 	faidedAdd()
 }
 
-//异步任务基类
+// BaseTask 异步任务基类
 type BaseTask struct {
 	faild uint64
 }
 
+// Failded 已经失败 传入失败原因
 func (t *BaseTask) Failded(err error) {
 }
+
 func (t *BaseTask) faidedAdd() {
 	atomic.AddUint64(&t.faild, 1)
 }
 
+// GetFaildedNum 获取失败次数
 func (t *BaseTask) GetFaildedNum() uint64 {
 	return t.faild
 }
+
+// Success 成功
 func (t *BaseTask) Success(result ...interface{}) {
 
 }
 
-//异步任务执行者
+// AsyncTaskExecuter 异步任务执行者
 type AsyncTaskExecuter interface {
 	//任务执行方法
 	ExecTask(task Task) error
 }
+
+// AsyncTaskOption 异步任务配置项
 type AsyncTaskOption struct {
 	AsyncMaxWaitTaskNum int
 	//最大异步任务go程数量
@@ -56,17 +63,20 @@ type AsyncTaskOption struct {
 	AsyncTaskMaxFaildedNum uint64
 }
 
-//异步go程池
+// AsyncTaskOperater 异步go程池
 type AsyncTaskOperater interface {
 	//执行异步任务，该方法并不会立即执行
 	//仅将任务放入到任务队列
 	ExecAsyncTask(task Task) error
 	//停止go程池，直到全部任务结束
 	StopWait()
+	SetMaxAsyncPoolNum(int64)
+	SetMinAsyncPoolNum(int64)
+	SetAsyncPoolIdelTime(time.Duration)
 }
 
-//异步任务go程池，主要执行短时间任务
-type AsyncTaskOperate struct {
+// AsyncTaskOperate 异步任务go程池，主要执行短时间任务
+type asyncTaskOperate struct {
 	taskname string
 	sync.WaitGroup
 
@@ -90,12 +100,12 @@ type AsyncTaskOperate struct {
 	execHandle func(task Task) error
 }
 
-//创建一个go程池
+// CreateAsyncTaskOperater 创建一个go程池
 //参数taskname 任务池名称
 //参数asyncTaskExecuter 任务执行者，决定任务如何执行
 //参数option 任务池配置参数
 func CreateAsyncTaskOperater(taskname string, asyncTaskExecuter AsyncTaskExecuter, option *AsyncTaskOption) AsyncTaskOperater {
-	tmp := &AsyncTaskOperate{
+	tmp := &asyncTaskOperate{
 		closeasyncchan: make(chan bool),
 		taskname:       taskname,
 	}
@@ -131,10 +141,28 @@ func CreateAsyncTaskOperater(taskname string, asyncTaskExecuter AsyncTaskExecute
 	tmp.initPool()
 	return tmp
 }
-func (m *AsyncTaskOperate) StopWait() {
+
+// SetMaxAsyncPoolNum 设置最大任务数
+func (m *asyncTaskOperate) SetMaxAsyncPoolNum(num int64) {
+	m.maxAsyncPoolNum = num
+}
+
+// SetMinAsyncPoolNum 设置最小任务数
+func (m *asyncTaskOperate) SetMinAsyncPoolNum(num int64) {
+	m.minAsyncPoolNum = num
+}
+
+// SetAsyncPoolIdelTime 设置空闲时间
+func (m *asyncTaskOperate) SetAsyncPoolIdelTime(idel time.Duration) {
+	m.asyncPoolIdelTime = idel
 
 }
-func (m *AsyncTaskOperate) initPool() {
+
+// StopWait 等待任务池停止
+func (m *asyncTaskOperate) StopWait() {
+
+}
+func (m *asyncTaskOperate) initPool() {
 	Tlog.Debugf("开始初始化go程[%s]：%d,%d", m.taskname, m.minAsyncPoolNum, m.maxAsyncPoolNum)
 
 	m.curAsyncPoolNum = 0
@@ -171,7 +199,7 @@ func (m *AsyncTaskOperate) initPool() {
 
 }
 
-func (m *AsyncTaskOperate) ExecAsyncTask(task Task) error {
+func (m *asyncTaskOperate) ExecAsyncTask(task Task) error {
 	m.asyncchan <- task
 	// if m.minAsyncPoolNum < m.maxAsyncPoolNum {
 	// 	m.cond.L.Lock()
@@ -182,7 +210,7 @@ func (m *AsyncTaskOperate) ExecAsyncTask(task Task) error {
 }
 
 //增加一个异步任务
-func (m *AsyncTaskOperate) addAsync() {
+func (m *asyncTaskOperate) addAsync() {
 	m.Add(1)
 	defer func() {
 		if err := recover(); err != nil {
@@ -215,7 +243,7 @@ func (m *AsyncTaskOperate) addAsync() {
 		}
 	}
 }
-func (m *AsyncTaskOperate) execTask(task Task) {
+func (m *asyncTaskOperate) execTask(task Task) {
 	// defer func() {
 	// 	if err := recover(); err != nil {
 	// 		task.faidedAdd()

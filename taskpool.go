@@ -6,37 +6,37 @@ import (
 	"time"
 )
 
-//任务池已经停止错误
+// ErrStop 任务池已经停止错误
 //放入元素时如果任务池已停止会在tokener中返回该错误
-var PoolStopError = errors.New("任务池已经停止")
+var ErrStop = errors.New("任务池已经停止")
 
-//任务池执行失败错误
-type TaskPoolExecError struct {
+// ErrExec 任务池执行失败错误
+type ErrExec struct {
 	err interface{}
 }
 
 //执行错误
-func (e *TaskPoolExecError) Error() string {
+func (e *ErrExec) Error() string {
 	return fmt.Sprintf("任务执行失败：%v", e.err)
 }
 
-//执行任务级别
+// TaskLevel 执行任务级别
 type TaskLevel int64
 
 const (
-	//最低级别任务
-	TaskLevel_Lowest TaskLevel = iota * 1024
-	//较低级别任务
-	TaskLevel_Lower
-	//正常级别任务
-	TaskLevel_Normal
-	//较高级别任务
-	TaskLevel_Higher
-	//最高级别任务
-	TaskLevel_Highest
+	// TaskLevelLowest 最低级别任务
+	TaskLevelLowest TaskLevel = iota * 1024
+	// TaskLevelLower 较低级别任务
+	TaskLevelLower
+	// TaskLevelNormal 正常级别任务
+	TaskLevelNormal
+	// TaskLevelHigher 较高级别任务
+	TaskLevelHigher
+	// TaskLevelHighest 最高级别任务
+	TaskLevelHighest
 )
 
-//分片有限任务池配置参数
+// Option 分片有限任务池配置参数
 type Option struct {
 	//进入任务队列的缓冲大小
 	PutBuffNum int
@@ -48,7 +48,7 @@ type Option struct {
 	TaskPoolNum int64
 }
 
-//异步任务池
+// TaskPooler 异步任务池
 type TaskPooler interface {
 	//将任务放入池中
 	//返回一个Tokener令牌，可以查看任务执行情况
@@ -57,7 +57,7 @@ type TaskPooler interface {
 	Stop()
 }
 
-//执行任务
+// Tasker 执行任务
 type Tasker interface {
 	//执行任务级别
 	Lvl() TaskLevel
@@ -65,7 +65,7 @@ type Tasker interface {
 	Exec() (interface{}, error)
 }
 
-//执行任务令牌
+// Tokener 执行任务令牌
 //可以查询任务执行情况
 type Tokener interface {
 	//等待任务执行完成
